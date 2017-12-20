@@ -292,13 +292,13 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
             $expectedModelClass = $expectedModelClasses[$index];
 
             if ($actualModelClass !== $expectedModelClass && !is_subclass_of($actualModelClass, $expectedModelClass)) {
-                throw new \InvalidArgumentException(
+                /*throw new \InvalidArgumentException(
                     sprintf(
                         'Model class "%s" does not correspond to manager type "%s".',
                         $actualModelClass,
                         $managerType
                     )
-                );
+                );*/
             }
         }
     }
