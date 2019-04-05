@@ -37,7 +37,7 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
     {
         if ($container->hasExtension('twig')) {
             // add custom form widgets
-            $container->prependExtensionConfig('twig', ['form_themes' => ['SonataUserBundle:Form:form_admin_fields.html.twig']]);
+            $container->prependExtensionConfig('twig', ['form_themes' => ['@SonataUser/Form/form_admin_fields.html.twig']]);
         }
     }
 
@@ -67,10 +67,21 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
         $loader->load('form.xml');
 
         if (class_exists('Google\Authenticator\GoogleAuthenticator')) {
+            @trigger_error(
+                'The \'Google\Authenticator\' namespace is deprecated in sonata-project/GoogleAuthenticator since version 2.1 and will be removed in 3.0.',
+                E_USER_DEPRECATED
+            );
+        }
+
+        if (class_exists('Google\Authenticator\GoogleAuthenticator') ||
+            class_exists('Sonata\GoogleAuthenticator\GoogleAuthenticator')) {
             $loader->load('google_authenticator.xml');
         }
 
         $loader->load('twig.xml');
+        $loader->load('command.xml');
+        $loader->load('actions.xml');
+        $loader->load('mailer.xml');
 
         if ('orm' === $config['manager_type'] && isset(
             $bundles['FOSRestBundle'],
@@ -95,6 +106,7 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
 
         $this->configureTranslationDomain($config, $container);
         $this->configureController($config, $container);
+        $this->configureMailer($config, $container);
 
         $container->setParameter('sonata.user.default_avatar', $config['profile']['default_avatar']);
 
@@ -104,8 +116,6 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
     }
 
     /**
-     * @param array $config
-     *
      * @throws \RuntimeException
      *
      * @return array
@@ -155,9 +165,13 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
             return;
         }
 
-        if (!class_exists('Google\Authenticator\GoogleAuthenticator')) {
+        if (!class_exists('Google\Authenticator\GoogleAuthenticator')
+            && !class_exists('Sonata\GoogleAuthenticator\GoogleAuthenticator')) {
             throw new \RuntimeException('Please add ``sonata-project/google-authenticator`` package');
         }
+
+        $container->setParameter('sonata.user.google.authenticator.forced_for_role', $config['google_authenticator']['forced_for_role']);
+        $container->setParameter('sonata.user.google.authenticator.ip_white_list', $config['google_authenticator']['ip_white_list']);
 
         $container->getDefinition('sonata.user.google.authenticator.provider')
             ->replaceArgument(0, $config['google_authenticator']['server']);
@@ -250,17 +264,18 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
      * Adds aliases for user & group managers depending on $managerType.
      *
      * @param ContainerBuilder $container
-     * @param                  $managerType
+     * @param string           $managerType
      */
     protected function aliasManagers(ContainerBuilder $container, $managerType): void
     {
         $container->setAlias('sonata.user.user_manager', sprintf('sonata.user.%s.user_manager', $managerType));
         $container->setAlias('sonata.user.group_manager', sprintf('sonata.user.%s.group_manager', $managerType));
+
+        // NEXT_MAJOR: call setPublic(true) directly, when dropping support for Sf 3.3
+        $container->getAlias('sonata.user.user_manager')->setPublic(true);
+        $container->getAlias('sonata.user.group_manager')->setPublic(true);
     }
 
-    /**
-     * @param array $config
-     */
     private function checkManagerTypeToModelTypeMapping(array $config): void
     {
         $managerType = $config['manager_type'];
@@ -301,5 +316,10 @@ class SonataUserExtension extends Extension implements PrependExtensionInterface
                 );*/
             }
         }
+    }
+
+    private function configureMailer(array $config, ContainerBuilder $container): void
+    {
+        $container->setAlias('sonata.user.mailer', $config['mailer']);
     }
 }

@@ -53,7 +53,7 @@ class RequestListener
      */
     public function onCoreRequest(GetResponseEvent $event): void
     {
-        if (HttpKernel::MASTER_REQUEST != $event->getRequestType()) {
+        if (HttpKernel::MASTER_REQUEST !== $event->getRequestType()) {
             return;
         }
 
@@ -81,8 +81,8 @@ class RequestListener
         }
 
         $state = 'init';
-        if ('POST' == $request->getMethod()) {
-            if (true == $this->helper->checkCode($user, $request->get('_code'))) {
+        if ('POST' === $request->getMethod()) {
+            if (true === $this->helper->checkCode($user, $request->get('_code'))) {
                 $session->set($key, true);
 
                 return;
@@ -91,8 +91,11 @@ class RequestListener
             $state = 'error';
         }
 
-        $event->setResponse($this->templating->renderResponse('SonataUserBundle:Admin:Security/two_step_form.html.twig', [
+        $event->setResponse($this->templating->renderResponse('@SonataUser/Admin/Security/login.html.twig', [
+            'base_template' => '@SonataAdmin/standard_layout.html.twig',
+            'error' => [],
             'state' => $state,
-         ]));
+            'two_step_submit' => true,
+        ]));
     }
 }

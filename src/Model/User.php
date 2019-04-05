@@ -21,12 +21,12 @@ use FOS\UserBundle\Model\User as AbstractedUser;
 abstract class User extends AbstractedUser implements UserInterface
 {
     /**
-     * @var \DateTime
+     * @var \DateTime|null
      */
     protected $createdAt;
 
     /**
-     * @var \DateTime
+     * @var \DateTime|null
      */
     protected $updatedAt;
 
@@ -36,7 +36,7 @@ abstract class User extends AbstractedUser implements UserInterface
     protected $twoStepVerificationCode;
 
     /**
-     * @var \DateTime
+     * @var \DateTime|null
      */
     protected $dateOfBirth;
 
@@ -572,5 +572,19 @@ abstract class User extends AbstractedUser implements UserInterface
         $this->setRoles($roles);
 
         return $this;
+    }
+
+    /**
+     * Returns the gender list.
+     *
+     * @return array
+     */
+    public static function getGenderList()
+    {
+        return [
+            'gender_unknown' => UserInterface::GENDER_UNKNOWN,
+            'gender_female' => UserInterface::GENDER_FEMALE,
+            'gender_male' => UserInterface::GENDER_MALE,
+        ];
     }
 }
